@@ -18,13 +18,32 @@ namespace ConsoleApplication
 			Console.WriteLine("creating client");
 			using (client = new AmazonS3Client("", "", Amazon.RegionEndpoint.EUWest2)) 
 			{
+				Console.WriteLine("Saving (PUT) an object");
+				Task<PutObjectResponse> tres = PutObjectData(client, "blabla");
+				Console.WriteLine("Response: {0}", tres.Result.HttpStatusCode);
 				Console.WriteLine("Retrieving (GET) an object");
-				Task<string> result = ReadObjectData(client);
-				Console.WriteLine(result.Result);
+				Task<string> content = ReadObjectData(client);
+				Console.WriteLine(content.Result);
 			}
 			Console.WriteLine("Press any key to continue...");
 			Console.ReadKey();
 		}
+
+		static async Task<PutObjectResponse> PutObjectData(IAmazonS3 client, string file)
+{
+
+// Create a PutObject request
+PutObjectRequest request = new PutObjectRequest
+{
+				BucketName = bucketName,
+					   Key = keyName,
+    FilePath = file 
+};
+
+// Put object
+PutObjectResponse response = await client.PutObjectAsync(request);
+return response;
+}
 
 		static async Task<string> ReadObjectData(IAmazonS3 client)
 		{
