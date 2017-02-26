@@ -15,45 +15,46 @@ namespace ConsoleApplication
 
 		public static void Main(string[] args)
 		{
-
-			Console.WriteLine("Retrieving (GET) an object");
-			Task<string> result = ReadObjectData();
-			Console.WriteLine("Press any key to continue..." + result.Result);
-			Console.ReadKey();
-		}
-
-		static async Task<string> ReadObjectData()
-		{
-			string responseBody = "";
-
 			Console.WriteLine("creating client");
 			using (client = new AmazonS3Client("", "", Amazon.RegionEndpoint.EUWest2)) 
 			{
-				GetObjectRequest request = new GetObjectRequest 
-				{
-					BucketName = bucketName,
-						   Key = keyName
-				};
-
-				try
-				{
-			Console.WriteLine("doing request");
-					using (GetObjectResponse response = await client.GetObjectAsync(request))  
-						using (Stream responseStream = response.ResponseStream)
-						using (StreamReader reader = new StreamReader(responseStream))
-						{
-							string title = response.Metadata["x-amz-meta-title"];
-							Console.WriteLine("The object's title is {0}", title);
-
-							responseBody = reader.ReadToEnd();
-						}
-				}
-				catch (AmazonS3Exception s3Exception)
-				{
-					Console.WriteLine(s3Exception.Message,
-							s3Exception.InnerException);
-				}
+				Console.WriteLine("Retrieving (GET) an object");
+				Task<string> result = ReadObjectData(client);
+				Console.WriteLine(result.Result);
 			}
+			Console.WriteLine("Press any key to continue...");
+			Console.ReadKey();
+		}
+
+		static async Task<string> ReadObjectData(IAmazonS3 client)
+		{
+			string responseBody = "";
+
+			GetObjectRequest request = new GetObjectRequest 
+			{
+				BucketName = bucketName,
+					   Key = keyName
+			};
+
+			try
+			{
+				Console.WriteLine("doing request");
+				using (GetObjectResponse response = await client.GetObjectAsync(request))  
+					using (Stream responseStream = response.ResponseStream)
+					using (StreamReader reader = new StreamReader(responseStream))
+					{
+						string title = response.Metadata["x-amz-meta-title"];
+						Console.WriteLine("The object's title is {0}", title);
+
+						responseBody = reader.ReadToEnd();
+					}
+			}
+			catch (AmazonS3Exception s3Exception)
+			{
+				Console.WriteLine(s3Exception.Message,
+						s3Exception.InnerException);
+			}
+
 			return responseBody;
 		}
 
