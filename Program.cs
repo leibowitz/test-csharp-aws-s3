@@ -2,6 +2,7 @@
 using System.IO;
 using Amazon.S3;
 using Amazon.S3.Model;
+using Amazon.S3.Transfer;
 using System.Threading.Tasks;
 
 namespace ConsoleApplication
@@ -19,30 +20,40 @@ namespace ConsoleApplication
 			using (client = new AmazonS3Client("", "", Amazon.RegionEndpoint.EUWest2)) 
 			{
 				Console.WriteLine("Saving (PUT) an object");
-				Task<PutObjectResponse> tres = PutObjectData(client, "blabla");
-				Console.WriteLine("Response: {0}", tres.Result.HttpStatusCode);
-				Console.WriteLine("Retrieving (GET) an object");
+				//Task<PutObjectResponse> tres = PutObjectData(client, "blabla");
+				// https://msdn.microsoft.com/en-us/library/system.net.httpstatuscode.aspx
+				//Console.WriteLine("Response: {0}", tres.Result.HttpStatusCode);
+				PutObjectData(client, "blabla");
+				Console.WriteLine("Done");
+				/*Console.WriteLine("Retrieving (GET) an object");
 				Task<string> content = ReadObjectData(client);
-				Console.WriteLine(content.Result);
+				Console.WriteLine(content.Result);*/
 			}
 			Console.WriteLine("Press any key to continue...");
 			Console.ReadKey();
 		}
 
-		static async Task<PutObjectResponse> PutObjectData(IAmazonS3 client, string file)
+		// http://docs.aws.amazon.com/sdkfornet/v3/apidocs/items/S3/TS3PutObjectResponse.html
+		//static async Task<PutObjectResponse> PutObjectData(IAmazonS3 client, string file)
+		static void PutObjectData(IAmazonS3 client, string file)
 {
 
-// Create a PutObject request
-PutObjectRequest request = new PutObjectRequest
-{
-				BucketName = bucketName,
-					   Key = keyName,
-    FilePath = file 
-};
+TransferUtility fileTransferUtility =
+     new TransferUtility(client);
+TransferUtilityUploadRequest uploadRequest =
+    new TransferUtilityUploadRequest
+    {
+	BucketName = bucketName,
+	Key = keyName,
+    	FilePath = file 
+    };
 
-// Put object
-PutObjectResponse response = await client.PutObjectAsync(request);
-return response;
+uploadRequest.UploadProgressEvent +=
+    new EventHandler<UploadProgressArgs>
+        (uploadRequest_UploadPartProgressEvent);
+
+
+fileTransferUtility.Upload(uploadRequest);
 }
 
 		static async Task<string> ReadObjectData(IAmazonS3 client)
@@ -76,6 +87,11 @@ return response;
 
 			return responseBody;
 		}
+
+static void uploadRequest_UploadPartProgressEvent(object sender, UploadProgressArgs e)
+{    
+    Console.WriteLine("{0}/{1} {2}%", e.TransferredBytes, e.TotalBytes, e.PercentDone);
+}
 
 	}
 }
